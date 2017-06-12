@@ -1,0 +1,23 @@
+{
+	splash: {
+		image_url: "url here",
+		description: {
+			text: "hii text here",
+			font: "font here",
+			size: 17,
+			font_color: #AABBCC,
+			bold: true/false,
+			italics: true/false,
+			under_line: false/true,
+			alignment: LEFT_ALIGNED/CENTRAL_ALIGNED/RIGHT_ALIGNED
+		}
+
+	},
+	list: {
+
+	},
+	details: {
+
+	}
+
+}
