@@ -7,7 +7,7 @@ class AppLabConstants
 	VARIABLEDECLRATIONEND	= "/* variable declarations ends here */\n"
 	CLASS 					= "class "
 	EXTENDS					= " extends "
-	COMPONENTS				= "Components "
+	COMPONENTS				= "Component "
 	BRACKETOPEN				= "("
 	BRACKETCLOSE			= ")"
 	CURLBRACKETOPEN			= "{"
