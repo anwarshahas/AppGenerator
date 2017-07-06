@@ -2,61 +2,105 @@ class MobileApp
 
 	def self.data_json
 		json = {
-			"page":{
-				"components":[
+			"components":[
 					{
-						"component": {
-							"type":"app_lab_image",
-							"image_url":"",
-							"size": {
-								"width":100,
-								"height":100
-							}
+						"id": 1,
+						"type":"app_lab_image",
+						"data": {
+							"uri":"https://media.playstation.com/is/image/SCEA/spider-man-screen-02-ps4-us-13jun16?$MediaCarousel_Original$"
+						},
+						"size": {
+							"width": '36',
+							"height": '30'
 						},
 						"position": {
+							"top": '0',
+							"left": '0'
+						},
+						"style": {
 
 						}
 					},
 					{
-						"component": {
-							"type": "app_lab_text",
-							"text": "Hi how you doing??????",
-							"color": "#ff0000",
-							"size": 22
+						"id": 2,
+						"type": "app_lab_text",
+						"data": {
+							"text": "Peter Parker"
 						},
 						"position": {
+							"top": '31',
+							"left": '13'
+						},
+						"style": {
+							"alignSelf": 'stretch',
+							"textAlign": 'center',
+							"color": '#0000ff',
+							"fontSize": 22,
+						}
+					},
+					{
+						"id": 3,
+						"type":"app_lab_image",
+						"data": {
+							"uri":"https://media.playstation.com/is/image/SCEA/spider-man-screen-02-ps4-us-13jun16?$MediaCarousel_Original$"
+						},
+						"size": {
+							"width": 100,
+							"height": 100
+						},
+						"position": {
+							"top": '26',
+							"left": 20
+						},
+						"style": {
 
 						}
 					},
 					{
-						"component": {
-							"type": "app_lab_text",
-							"text": "Hi how you doing??????",
-							"color": "#ff0000",
-							"size": 22
+						"id": 4,
+						"type": "app_lab_text",
+						"data": {
+							"text": "**** it until you make it!!!"
+						},
+						"size": {
+							"width": '36'
 						},
 						"position": {
-
+							"top": '36',
+							"left": '0'
+						},
+						"style": {
+							"alignSelf": 'stretch',
+							"textAlign": 'center',
+							"color": '#ff0000',
+							"fontSize": 22,
 						}
 					},
 					{
-						"component": {
-							"type":"app_lab_image",
-							"image_url":"",
-							"size": {
-								"width":100,
-								"height":100
-							}
+						"id": 5,
+						"type": "app_lab_text",
+						"data": {
+							"text": "Lorem ipsum dkfjdkf dkkjdkjfkdjfkdsjfkdjkjkj jdkfjdkfjdkfj dkj dsjkfjdskfj dj kdsjfkdjf k ksdjfkdfjd jdkfjdkf kdsfkdjfkdjfkdjfjdsf dkfdkfjdkfdkjfkl dksjfdkfjd dksjfdkfjkldsjfkdjfkdfjsdkfjds kjdkfjdfjdk dsjfkds fkjfkdjf idsjfkld fkldjskfljdkf jdkjfkldjfkdsj fkdjfkldsjfkdsjfdkjfdkljfkldj fkdj fl kjfdklsfj dklfjdlksf jdkljfkldjfkldj sfkljdkfdksfkdfkdsfdklsjfldkjfdkf jdksfj dklfjdkljfdlkj"
+						},
+						"size": {
+							"width": '36'
 						},
 						"position": {
-
+							"top": '40',
+							"left": '0'
+						},
+						"style": {
+							"padding": 5,
+							"alignSelf": 'stretch',
+							"textAlign": 'center',
+							"color": '#222222',
+							"fontSize": 22,
 						}
 					},
 				],
-				"name": "splash page",
-				"id": 123,
-				"init_page": true
-			}
+			"name": "splash page",
+			"id": 1,
+			"init_page": true
 		}
 	end
 
@@ -124,6 +168,7 @@ class MobileApp
 		headers << "import { View, Image, Text, StyleSheet } from 'react-native';"
 		headers << "import AppLabImage from '../components/appLabImage';"
 		headers << "import AppLabText from '../components/appLabText';"
+		headers << "import * as sizeClass from '../constants/sizeClass';"
 
 		header_string = ""
 		headers.each do |h|
@@ -152,22 +197,22 @@ class MobileApp
 	end
 
 	def self.generate_dyanamic_code(count)
-		components = self.data_json[:page][:components]
-		variables = self.variables_declaration
+		components = self.data_json[:components]
+		variables = ""
 		stack_views = ""
 		styles = ""
 		styles = styles + self.main_container_style
 		components.each do |c|
-			stack_views = stack_views + self.generate_component_with_view(count, c[:component])
-			styles = styles + self.component_view_style(c[:component]) + self.component_style(c[:component])
+			stack_views = stack_views + self.generate_component_with_view(count, c)
+			styles = styles + self.component_view_style(c) + self.component_style(c)
+			variables = variables + self.variables_declaration(c)
 		end
 		[variables, stack_views, styles] 
 	end
 
-	def self.variables_declaration
+	def self.variables_declaration(component)
 		variables = []
-		variables << "let splashIcon = {uri: 'https://facebook.github.io/react/img/logo_og.png'};"
-		variables << "let splashText = 'All Rights Reserved Facebook';"
+		variables << "let " + self.camel_case(component[:type]) + component[:id].to_s + " = " + component[:data].to_json
 		variables_string = ""
 		variables.each do |v|
 			variables_string = variables_string + self.tabs(2) + v + "\n"
@@ -189,14 +234,14 @@ class MobileApp
 
 	def self.generate_component_with_view(count, component)
 		type = component[:type]
-		self.tabs(count) + "<View style= { styles." + self.camel_case(type) + "View" + " }>" + self.new_line(1) +
+		self.tabs(count) + "<View style= { styles." + self.camel_case(type)+ component[:id].to_s + "View" + " }>" + self.new_line(1) +
 		self.tabs(count+1) + self.generate_component(component) + self.new_line(1) +
 		self.tabs(count) + "</View>" + self.new_line(1)
 	end
 
 	def self.component_view_style(component)
 		string = ""
-		string = self.tabs(1) + self.camel_case(component[:type]) + "View" + " : {" + self.new_line(1)
+		string = self.tabs(1) + self.camel_case(component[:type]) + component[:id].to_s + "View" + " : {" + self.new_line(1)
 		flex_count = 1
 		case component[:type]
 		when "app_lab_image"
@@ -206,10 +251,10 @@ class MobileApp
 		end
 
 		variables = []
-		variables << "flex: " + flex_count.to_s
-		variables << "flexDirection: 'row'"
-		variables << "justifyContent: 'center'"
-		variables << "alignItems: 'center'"
+		# variables << "flex: " + flex_count.to_s
+		# variables << "flexDirection: 'row'"
+		# variables << "justifyContent: 'center'"
+		# variables << "alignItems: 'center'"
 		variables_string = ""
 		variables.each do |v|
 			variables_string = variables_string + self.tabs(2) + v + "," + "\n"
@@ -219,18 +264,68 @@ class MobileApp
 
 	def self.component_style(component)
 		string = ""
-		string = self.tabs(1) + self.camel_case(component[:type]) + " : {" + self.new_line(1)
+		string = self.tabs(1) + self.camel_case(component[:type]) + component[:id].to_s + " : {" + self.new_line(1)
 		variables = []
-		case component[:type]
-		when "app_lab_image"
-			variables << "width: " + component[:size][:width].to_s
-			variables << "height: " + component[:size][:height].to_s
-		when "app_lab_text"
-			variables << "alignSelf: " + "'" + "stretch" + "'"
-			variables << "textAlign: " + "'" + "center" + "'"
-			variables << "color: " + "'" + component[:color] + "'"
-			variables << "fontSize: " + component[:size].to_s
+		variables << "position: " + "'absolute'"
+		if component[:size].present?
+			if component[:size][:width].present?
+				if component[:size][:width].is_a? Integer
+					variables << "width: " + (component[:size][:width].to_f).to_s 
+				else
+					variables << "width: " + "sizeClass.winWidth * " + (component[:size][:width].to_f/AppLabConstants::GRIDWIDTHCOUNT).to_s 
+				end
+			end
+			if component[:size][:height].present?
+				if component[:size][:height].is_a? Integer
+					variables << "height: " + (component[:size][:height].to_f).to_s
+				else
+					variables << "height: " +  "sizeClass.winHeight * " + (component[:size][:height].to_f/AppLabConstants::GRIDHEIGHTCOUNT).to_s
+				end
+			end
 		end
+		if component[:position].present?
+			if component[:position][:top].present?
+				if component[:position][:top].is_a? Integer
+					variables << "top: " + (component[:position][:top].to_f).to_s
+				else
+					variables << "top: " + "sizeClass.winHeight * " + (component[:position][:top].to_f/AppLabConstants::GRIDHEIGHTCOUNT).to_s
+				end
+			end
+			if component[:position][:left].present?
+				if component[:position][:left].is_a? Integer
+					variables << "left: " + (component[:position][:left].to_f).to_s
+				else
+					variables << "left: " + "sizeClass.winWidth * " + (component[:position][:left].to_f/AppLabConstants::GRIDWIDTHCOUNT).to_s
+				end
+			end
+		end
+		if component[:style].present?
+			styles = component[:style]
+			styles.each do |key, value|
+				if value.is_a? Integer
+					variables << key.to_s + ": " + value.to_s
+				else
+					variables << key.to_s + ": " + "'" + value.to_s + "'"
+				end
+			end
+		end
+		
+		# case component[:type]
+		# when "app_lab_image"
+		# 	variables << "position: " + "'absolute'"
+		# 	variables << "width: " + "sizeClass.winWidth * " + (component[:size][:width]/20.0).to_s 
+		# 	variables << "height: " +  "sizeClass.winHeight * " + (component[:size][:height]/20.0).to_s
+		# 	variables << "top: " + "sizeClass.winHeight * " + (component[:position][:top]/20.0).to_s
+		# 	variables << "left: " + "sizeClass.winWidth * " + (component[:position][:left]/20.0).to_s
+		# when "app_lab_text"
+		# 	variables << "position: " + "'absolute'"
+		# 	variables << "alignSelf: " + "'" + "stretch" + "'"
+		# 	variables << "textAlign: " + "'" + "center" + "'"
+		# 	variables << "color: " + "'" + component[:color] + "'"
+		# 	variables << "fontSize: " + component[:size].to_s
+		# 	variables << "top: " + "sizeClass.winHeight * " + (component[:position][:top]/20.0).to_s
+		# 	variables << "left: " + "sizeClass.winWidth * " + (component[:position][:left]/20.0).to_s
+		# end
 		variables_string = ""
 		variables.each do |v|
 			variables_string = variables_string + self.tabs(2) + v + "," + "\n"
@@ -252,12 +347,20 @@ class MobileApp
 	end
 
 	def self.generate_component(component)
-		case component[:type]
-		when "app_lab_image"
-				"<AppLabImage data = {splashIcon} style = {styles." + self.camel_case(component[:type]) +  "} />"
-		when "app_lab_text"
-				"<AppLabText style = {styles." + self.camel_case(component[:type]) +  "}"+ " text = {splashText}" + " />"
+		type = component[:type]
+		id = component[:id]
+		component_name = self.component_name_generation(type)
+		variable_name = self.camel_case(type) + id.to_s
+		"<" + component_name + " data = {" + variable_name + "} style = {styles." + variable_name +  "} />"
+	end
+
+	def self.component_name_generation(component_name)
+		words = component_name.split(/[\s_]/)
+		variable_name = ""
+		words.each_with_index do |w, index|
+			variable_name = variable_name + w.capitalize
 		end
+		variable_name
 	end
 
 	def self.return_view(components)

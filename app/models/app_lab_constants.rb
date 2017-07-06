@@ -13,4 +13,7 @@ class AppLabConstants
 	CURLBRACKETOPEN			= "{"
 	CURLBRACKETCLOSE		= "}"
 	RENDER					= "render()"
+
+	GRIDWIDTHCOUNT			= 36
+	GRIDHEIGHTCOUNT			= 72
 end
