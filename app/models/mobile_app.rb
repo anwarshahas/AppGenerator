@@ -18,11 +18,50 @@ class MobileApp
 							"left": '0'
 						},
 						"style": {
-
-						}
+						},
+						"components": [
+							{
+								"id": 2,
+								"type": "app_lab_image",
+								"data": {
+									"uri":"https://media.playstation.com/is/image/SCEA/spider-man-screen-02-ps4-us-13jun16?$MediaCarousel_Original$"
+								},
+								"size": {
+									"width": 80,
+									"height": 80
+								},
+								"position": {
+									
+								},
+								"style": {
+									"padding": 2,
+								    "alignSelf": 'center',
+								    "backgroundColor": '#ffffff'
+								}
+							},
+							{
+								"id": 3,
+								"type": "app_lab_text",
+								"data": {
+									"text": "Peter Parker is here"
+								},
+								"position": {
+									
+								},
+								"style": {
+									"alignSelf": 'stretch',
+									"textAlign": 'center',
+									"color": '#0000ff',
+									"fontSize": 22,
+									"marginLeft": 10,
+									"marginTop": 70,
+									"backgroundColor": '#00000000'
+								}
+							},
+						]
 					},
 					{
-						"id": 2,
+						"id": 4,
 						"type": "app_lab_text",
 						"data": {
 							"text": "Peter Parker"
@@ -39,7 +78,7 @@ class MobileApp
 						}
 					},
 					{
-						"id": 3,
+						"id": 5,
 						"type":"app_lab_image",
 						"data": {
 							"uri":"https://media.playstation.com/is/image/SCEA/spider-man-screen-02-ps4-us-13jun16?$MediaCarousel_Original$"
@@ -53,11 +92,10 @@ class MobileApp
 							"left": 20
 						},
 						"style": {
-
 						}
 					},
 					{
-						"id": 4,
+						"id": 6,
 						"type": "app_lab_text",
 						"data": {
 							"text": "**** it until you make it!!!"
@@ -73,11 +111,11 @@ class MobileApp
 							"alignSelf": 'stretch',
 							"textAlign": 'center',
 							"color": '#ff0000',
-							"fontSize": 22,
+							"fontSize": 20,
 						}
 					},
 					{
-						"id": 5,
+						"id": 7,
 						"type": "app_lab_text",
 						"data": {
 							"text": "Lorem ipsum dkfjdkf dkkjdkjfkdjfkdsjfkdjkjkj jdkfjdkfjdkfj dkj dsjkfjdskfj dj kdsjfkdjf k ksdjfkdfjd jdkfjdkf kdsfkdjfkdjfkdjfjdsf dkfdkfjdkfdkjfkl dksjfdkfjd dksjfdkfjkldsjfkdjfkdfjsdkfjds kjdkfjdfjdk dsjfkds fkjfkdjf idsjfkld fkldjskfljdkf jdkjfkldjfkdsj fkdjfkldsjfkdsjfdkjfdkljfkldj fkdj fl kjfdklsfj dklfjdlksf jdkljfkldjfkldj sfkljdkfdksfkdfkdsfdklsjfldkjfdkf jdksfj dklfjdkljfdlkj"
@@ -94,7 +132,7 @@ class MobileApp
 							"alignSelf": 'stretch',
 							"textAlign": 'center',
 							"color": '#222222',
-							"fontSize": 22,
+							"fontSize": 16,
 						}
 					},
 				],
@@ -104,11 +142,11 @@ class MobileApp
 		}
 	end
 
-	def self.clone_app
+	def self.clone_app(selected_app, project_name)
 		mobile_apps_root_directory = "../../MobileApps"
-		selected_mobile_app_directory = mobile_apps_root_directory + "/Masters/applabpoc"
-		destination_mobile_app_directory = mobile_apps_root_directory + "/GenApps/applabpoc/"
-		app_name = "chakka"
+		selected_mobile_app_directory = mobile_apps_root_directory + "/Masters/" + selected_app
+		destination_mobile_app_directory = mobile_apps_root_directory + "/GenApps/" + selected_app + "/"
+		app_name = project_name
 		destination_app_name = destination_mobile_app_directory+app_name
 		FileUtils.mkdir_p(destination_mobile_app_directory) unless File.directory?(destination_mobile_app_directory)
 		FileUtils.cp_r selected_mobile_app_directory, destination_app_name  unless File.exists?(destination_app_name)
@@ -129,20 +167,40 @@ class MobileApp
 		end
 	end
 
-	def self.code_generation
+	def self.code_generation(selected_app, project_name, pages)
 		mobile_apps_root_directory = "../../MobileApps"
-		destination_mobile_app_directory = mobile_apps_root_directory + "/GenApps/applabpoc/"
-		app_name = "chakka"
+		destination_mobile_app_directory = mobile_apps_root_directory + "/GenApps/" + selected_app + "/"
+		app_name = project_name
 		destination_app_name = destination_mobile_app_directory+app_name
 		source_directory_path = destination_app_name + '/app/screens/'
+		FileUtils.rm_rf Dir.glob("#{source_directory_path}/*")
+		pagesList = self.screens(source_directory_path, pages)
+		AppRootFile.generate_route_file(selected_app, project_name, pagesList)
+	end
 
-		file_name = 'splash.js'
+	def self.screens(source_directory_path, pages)
+		pagesList = []
+		init_page = ""
+		pages.each do |page|
+			components = page[:components]
+			screen_code_generation(components, page[:name], source_directory_path)
+			if page[:init_page]
+				pagesList.insert(0, page[:name]).flatten
+			else
+				pagesList << page[:name]
+			end
+		end
+		pagesList
+	end
+
+	def self.screen_code_generation(components, screen_name, source_directory_path)
+		file_name =  Helper.file_name_generation(screen_name)
 		path = source_directory_path + file_name
 
 		# generate class name
-		class_name = self.class_name_generation('splash')
+		class_name = Helper.class_name_generation(screen_name)
 		# creating varibles, components and styles
-		dynamic_code_segments = self.generate_dyanamic_code(4)
+		dynamic_code_segments = self.generate_dyanamic_code(4, components)
 		# picking varibles from stack
 		variables = dynamic_code_segments.first
 		# picking components from stack
@@ -158,7 +216,7 @@ class MobileApp
   			f.write(self.header_files)
   			f.write(self.class_declaration(class_name, render_function))
   			f.write(self.style_sheet_generation(styles_sheet))
-  			f.write(self.export_class('splash'))
+  			f.write(self.export_class(screen_name))
 		end
 	end
 
@@ -168,103 +226,81 @@ class MobileApp
 		headers << "import { View, Image, Text, StyleSheet } from 'react-native';"
 		headers << "import AppLabImage from '../components/appLabImage';"
 		headers << "import AppLabText from '../components/appLabText';"
+		headers << "import AppLabButton from '../components/appLabButton';"
+		headers << "import AppLabEventDetailsTile from '../components/appLabEventDetailsTile';"
 		headers << "import * as sizeClass from '../constants/sizeClass';"
 
 		header_string = ""
 		headers.each do |h|
-			header_string = header_string + h + self.new_line(1)
+			header_string = header_string + h + Helper.new_line(1)
 		end
-		AppLabConstants::HEADERSTART + header_string + AppLabConstants::HEADEREND + self.new_line(1)
+		AppLabConstants::HEADERSTART + header_string + AppLabConstants::HEADEREND + Helper.new_line(1)
 	end
 
 	def self.class_declaration(class_name, render_function)
-		class_name_declaration = AppLabConstants::CLASS + class_name + AppLabConstants::EXTENDS + AppLabConstants::COMPONENTS + " " + AppLabConstants::CURLBRACKETOPEN + self.new_line(2)
+		class_name_declaration = AppLabConstants::CLASS + class_name + AppLabConstants::EXTENDS + AppLabConstants::COMPONENTS + Helper.spaces(1) + AppLabConstants::CURLBRACKETOPEN + Helper.new_line(2)
 		class_body = render_function
-		class_declaration_closing =  AppLabConstants::CURLBRACKETCLOSE + self.new_line(1)
+		class_declaration_closing =  AppLabConstants::CURLBRACKETCLOSE + Helper.new_line(1)
 		class_declaration = class_name_declaration +
 								class_body +
 							class_declaration_closing
-		AppLabConstants::CLASSDECLRATIONSTART + class_declaration + AppLabConstants::CLASSDECLRATIONEND + self.new_line(1)
+		AppLabConstants::CLASSDECLRATIONSTART + class_declaration + AppLabConstants::CLASSDECLRATIONEND + Helper.new_line(1)
 	end
 
-	def self.class_name_generation(file_name)
-		words = file_name.split(/[\s_]/)
-		class_name = ""
-		words.each do |w|
-			class_name = class_name + w.capitalize
-		end
-		class_name
-	end
-
-	def self.generate_dyanamic_code(count)
-		components = self.data_json[:components]
-		variables = ""
-		stack_views = ""
-		styles = ""
-		styles = styles + self.main_container_style
-		components.each do |c|
-			stack_views = stack_views + self.generate_component_with_view(count, c)
-			styles = styles + self.component_view_style(c) + self.component_style(c)
-			variables = variables + self.variables_declaration(c)
+	def self.generate_dyanamic_code(count, components, variables="", stack_views="", styles=self.main_container_style)
+		components.each do |component|
+			stack_views = stack_views + self.views_code_generation(count, component)
+			styles = styles + self.style_code_generation(component)
+			variables = variables + self.variables_code_generation(component)
 		end
 		[variables, stack_views, styles] 
 	end
 
-	def self.variables_declaration(component)
+	def self.variables_code_generation(component)
 		variables = []
-		variables << "let " + self.camel_case(component[:type]) + component[:id].to_s + " = " + component[:data].to_json
+		components = component[:components]
+		if component[:data].present?
+			variables << "let " + Helper.camel_case(component[:type]) + component[:id].to_s + " = " + component[:data].to_json
+		end
+		if component[:action].present? && component[:action][:enabled]
+			variables << "let " + Helper.camel_case(component[:type]) + "Action" + component[:id].to_s + " = " + component[:action].to_json
+		end
 		variables_string = ""
-		variables.each do |v|
-			variables_string = variables_string + self.tabs(2) + v + "\n"
+		variables.each do |variable|
+			if components.present?
+				variables_string = variables_string + Helper.tabs(2) + variable + Helper.new_line(1) + self.variable_code_generation_from_sub_components(components)
+			else
+				variables_string = variables_string + Helper.tabs(2) + variable + Helper.new_line(1)
+			end
 		end
 		variables_string
 	end
 
+	def self.variable_code_generation_from_sub_components(components)
+		variables = ""
+		components.each do |c|
+			variables = variables + self.variables_code_generation(c)
+		end
+		variables
+	end
+
 	def self.main_container_style
-		string = self.tabs(1) + "mainContainer" + " : {" + self.new_line(1)
 		variables = []
 		variables << "flex: 1"
 		variables << "flexDirection: 'column'"
 		variables_string = ""
 		variables.each do |v|
-			variables_string = variables_string + self.tabs(2) + v + "," + "\n"
+			variables_string = variables_string + Helper.tabs(2) + v + "," + Helper.new_line(1)
 		end
-		string + variables_string + self.tabs(1) + "}" + "," + self.new_line(1)
+		Helper.tabs(1) + "mainContainer : {" + Helper.new_line(1) +
+			variables_string +
+		Helper.tabs(1) + "}," + Helper.new_line(1)
 	end
 
-	def self.generate_component_with_view(count, component)
-		type = component[:type]
-		self.tabs(count) + "<View style= { styles." + self.camel_case(type)+ component[:id].to_s + "View" + " }>" + self.new_line(1) +
-		self.tabs(count+1) + self.generate_component(component) + self.new_line(1) +
-		self.tabs(count) + "</View>" + self.new_line(1)
-	end
-
-	def self.component_view_style(component)
+	def self.style_code_generation(component)
 		string = ""
-		string = self.tabs(1) + self.camel_case(component[:type]) + component[:id].to_s + "View" + " : {" + self.new_line(1)
-		flex_count = 1
-		case component[:type]
-		when "app_lab_image"
-			flex_count = 3
-		when "app_lab_text"
-			flex_count = 1
-		end
-
-		variables = []
-		# variables << "flex: " + flex_count.to_s
-		# variables << "flexDirection: 'row'"
-		# variables << "justifyContent: 'center'"
-		# variables << "alignItems: 'center'"
-		variables_string = ""
-		variables.each do |v|
-			variables_string = variables_string + self.tabs(2) + v + "," + "\n"
-		end
-		string + variables_string + self.tabs(1) + "}" + "," + self.new_line(1) 
-	end
-
-	def self.component_style(component)
-		string = ""
-		string = self.tabs(1) + self.camel_case(component[:type]) + component[:id].to_s + " : {" + self.new_line(1)
+		components = component[:components]
+		string = Helper.tabs(1) + Helper.camel_case(component[:type]) + component[:id].to_s + " : {" + Helper.new_line(1)
 		variables = []
 		variables << "position: " + "'absolute'"
 		if component[:size].present?
@@ -310,48 +346,57 @@ class MobileApp
 			end
 		end
 		
-		# case component[:type]
-		# when "app_lab_image"
-		# 	variables << "position: " + "'absolute'"
-		# 	variables << "width: " + "sizeClass.winWidth * " + (component[:size][:width]/20.0).to_s 
-		# 	variables << "height: " +  "sizeClass.winHeight * " + (component[:size][:height]/20.0).to_s
-		# 	variables << "top: " + "sizeClass.winHeight * " + (component[:position][:top]/20.0).to_s
-		# 	variables << "left: " + "sizeClass.winWidth * " + (component[:position][:left]/20.0).to_s
-		# when "app_lab_text"
-		# 	variables << "position: " + "'absolute'"
-		# 	variables << "alignSelf: " + "'" + "stretch" + "'"
-		# 	variables << "textAlign: " + "'" + "center" + "'"
-		# 	variables << "color: " + "'" + component[:color] + "'"
-		# 	variables << "fontSize: " + component[:size].to_s
-		# 	variables << "top: " + "sizeClass.winHeight * " + (component[:position][:top]/20.0).to_s
-		# 	variables << "left: " + "sizeClass.winWidth * " + (component[:position][:left]/20.0).to_s
-		# end
 		variables_string = ""
 		variables.each do |v|
-			variables_string = variables_string + self.tabs(2) + v + "," + "\n"
+			variables_string = variables_string + Helper.tabs(2) + v + "," + Helper.new_line(1)
 		end
-		string + variables_string + self.tabs(1) + "}" + "," + self.new_line(1)
+		if components.present?
+			string + variables_string + Helper.tabs(1) + "}" + "," + Helper.new_line(1) + self.style_code_generation_from_sub_components(components)
+		else
+			string + variables_string + Helper.tabs(1) + "}," + Helper.new_line(1)
+		end
 	end
 
-	def self.camel_case(component_name)
-		words = component_name.split(/[\s_]/)
-		variable_name = ""
-		words.each_with_index do |w, index|
-			if index == 0
-				variable_name = w.downcase
-			else
-				variable_name = variable_name + w.capitalize
-			end
+	def self.style_code_generation_from_sub_components(components)
+		styles = ""
+		components.each do |c|
+			styles = styles + style_code_generation(c)
 		end
-		variable_name
+		styles
 	end
 
-	def self.generate_component(component)
+	def self.views_code_generation(count, component)
 		type = component[:type]
 		id = component[:id]
+		components = component[:components]
 		component_name = self.component_name_generation(type)
-		variable_name = self.camel_case(type) + id.to_s
-		"<" + component_name + " data = {" + variable_name + "} style = {styles." + variable_name +  "} />"
+		variable_name = Helper.camel_case(type) + id.to_s
+		action_variable_name = Helper.camel_case(type) + "Action" + id.to_s
+		if components.present?
+			if component[:action].present? && component[:action][:enabled]
+				Helper.tabs(count) + "<" + component_name + " data = {" + variable_name + "} style = {styles." + variable_name +  "} " + "navigation = {this.props.navigation} " + " action = {" + action_variable_name + "} " + " >" + Helper.new_line(1) +
+					self.views_code_generation_from_sub_components(count, components) +
+				Helper.tabs(count) + "</" + component_name + ">" + Helper.new_line(1)
+			else
+				Helper.tabs(count) + "<" + component_name + " data = {" + variable_name + "} style = {styles." + variable_name +  "}" + " >" + Helper.new_line(1) +
+					self.views_code_generation_from_sub_components(count, components) +
+				Helper.tabs(count) + "</" + component_name + ">" + Helper.new_line(1)
+			end
+		else
+			if component[:action].present? && component[:action][:enabled]
+				Helper.tabs(count) + "<" + component_name + " data = {" + variable_name + "} style = {styles." + variable_name +  "} " + "navigation = {this.props.navigation} " + " action = {" + action_variable_name + "} " + " />" + Helper.new_line(1)
+			else
+				Helper.tabs(count) + "<" + component_name + " data = {" + variable_name + "} style = {styles." + variable_name +  "}" + " />" + Helper.new_line(1)
+			end
+		end
+	end
+
+	def self.views_code_generation_from_sub_components(count, components)
+		stack_views = ""
+		components.each do |c|
+			stack_views = stack_views + self.views_code_generation(count+1, c)
+		end
+		stack_views 
 	end
 
 	def self.component_name_generation(component_name)
@@ -364,47 +409,40 @@ class MobileApp
 	end
 
 	def self.return_view(components)
-		self.tabs(2) + "return (" + self.new_line(1) +
-		self.jsx_template_generation(3, components) +
-		self.tabs(2) + ");" + self.new_line(1)
+		Helper.tabs(2) + "return (" + Helper.new_line(1) +
+			self.jsx_template_generation(3, components) +
+		Helper.tabs(2) + ");" + Helper.new_line(1)
 	end
 
 	def self.render_function(variables, return_view)
-		string = self.tabs(1) + AppLabConstants::RENDER + " " + AppLabConstants::CURLBRACKETOPEN + self.new_line(1) + self.tabs(2) + AppLabConstants::VARIABLEDECLRATIONSTART
-		string = string + variables + self.tabs(2) + AppLabConstants::VARIABLEDECLRATIONEND
-		string + return_view + self.tabs(1) + AppLabConstants::CURLBRACKETCLOSE + self.new_line(1)
+		Helper.tabs(1) + AppLabConstants::RENDERFUNCTIONSTART +
+		Helper.tabs(1) + AppLabConstants::RENDER + Helper.spaces(1) + AppLabConstants::CURLBRACKETOPEN + Helper.new_line(1) + 
+			Helper.tabs(2) + AppLabConstants::VARIABLEDECLRATIONSTART +
+			variables + 
+			Helper.tabs(2) + AppLabConstants::VARIABLEDECLRATIONEND +
+			Helper.tabs(2) + AppLabConstants::RETURNSTART +
+			return_view + 
+			Helper.tabs(2) + AppLabConstants::RETURNEND +
+		Helper.tabs(1) + AppLabConstants::CURLBRACKETCLOSE + Helper.new_line(1) +
+		Helper.tabs(1) + AppLabConstants::RENDERFUNCTIONEND
 	end
 
 	def self.jsx_template_generation(count, components)
-		self.tabs(count) + "<View style= { styles.mainContainer }>" + self.new_line(1) +
-		components +
-		self.tabs(count) + "</View>" + self.new_line(1)
+		Helper.tabs(count) + "<View style= { styles.mainContainer }>" + Helper.new_line(1) +
+			components +
+		Helper.tabs(count) + "</View>" + Helper.new_line(1)
 	end
 
 	def self.style_sheet_generation(style)
-		varible_decl = 'const styles = StyleSheet.create({' + self.new_line(1)
-		end_line = '});' + self.new_line(2)
-		varible_decl + style + end_line
+		AppLabConstants::STYLESHEETSTART +
+		'const styles = {' + Helper.new_line(1) +
+			style +
+		'};' + Helper.new_line(1) +
+		AppLabConstants::STYLESHEETEND + Helper.new_line(1)
 	end
 
 	def self.export_class(name)
-		"export default " + self.class_name_generation(name)
-	end
-
-	def self.tabs(count)
-		tabs = ""
-		for i in 1..count
-			tabs = tabs + "\t"
-		end
-		tabs
-	end
-
-	def self.new_line(count)
-		new_lines = ""
-		for i in 1..count
-			new_lines = new_lines + "\n"
-		end
-		new_lines
+		"export default " + Helper.class_name_generation(name)
 	end
 
 	def build_apk(destination_app_name)
